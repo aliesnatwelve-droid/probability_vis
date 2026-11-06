@@ -1,0 +1,339 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="fw-bold display-6"><i class="bi bi-calculator-fill me-2" style="color: var(--primary);"></i>Statistical Calculations</h1>
+            <p class="text-muted">Compute descriptive statistics, correlation coefficients, and distribution probabilities.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Tab navigation -->
+        <div class="col-12">
+            <ul class="nav nav-tabs nav-fill" id="calcTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc" type="button" role="tab">
+                        <i class="bi bi-list-ul me-1"></i>Descriptive Stats
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="corr-tab" data-bs-toggle="tab" data-bs-target="#corr" type="button" role="tab">
+                        <i class="bi bi-diagram-3 me-1"></i>Correlation
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="prob-tab" data-bs-toggle="tab" data-bs-target="#prob" type="button" role="tab">
+                        <i class="bi bi-graph-up me-1"></i>Probability Calculator
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="tab-content" id="calcTabContent">
+                <!-- Descriptive Stats -->
+                <div class="tab-pane fade show active" id="desc" role="tabpanel">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-3">Enter Data</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Values (comma, space, or newline separated)</label>
+                            <textarea id="descValues" class="form-control" rows="6" placeholder="e.g. 1.2, 3.4, 5.6, 7.8, 9.0&#10;or paste from CSV/Excel"></textarea>
+                        </div>
+                        <button id="calcDescBtn" class="btn btn-primary">
+                            <i class="bi bi-calculator me-2"></i>Compute
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Correlation -->
+                <div class="tab-pane fade" id="corr" role="tabpanel">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-3">Paired Data</h5>
+                        <div class="mb-3">
+                            <label class="form-label">X Values</label>
+                            <textarea id="corrX" class="form-control" rows="3" placeholder="e.g. 1, 2, 3, 4, 5"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Y Values</label>
+                            <textarea id="corrY" class="form-control" rows="3" placeholder="e.g. 2, 4, 6, 8, 10"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Method</label>
+                            <select id="corrMethod" class="form-select">
+                                <option value="both">Pearson &amp; Spearman</option>
+                                <option value="pearson">Pearson only</option>
+                                <option value="spearman">Spearman only</option>
+                            </select>
+                        </div>
+                        <button id="calcCorrBtn" class="btn btn-primary">
+                            <i class="bi bi-diagram-3 me-2"></i>Calculate Correlation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Probability Calculator -->
+                <div class="tab-pane fade" id="prob" role="tabpanel">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-3">Distribution Probability</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Distribution</label>
+                            <select id="probDistSelect" class="form-select">
+                                <option value="">— Select —</option>
+                                {% for dist in distributions %}
+                                <option value="{{ dist.slug }}">{{ dist.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="probParamsContainer" class="mb-3">
+                            <div class="text-muted small">Select a distribution to see parameters.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">P(X = x) or P(X ≤ x)</label>
+                            <input type="number" id="probXValue" class="form-control" step="any" placeholder="x value">
+                        </div>
+                        <hr>
+                        <h6 class="fw-semibold">Or Range Probability</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small">Lower bound</label>
+                                <input type="number" id="probLower" class="form-control form-control-sm" step="any">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Upper bound</label>
+                                <input type="number" id="probUpper" class="form-control form-control-sm" step="any">
+                            </div>
+                        </div>
+                        <button id="calcProbBtn" class="btn btn-primary">
+                            <i class="bi bi-graph-up me-2"></i>Calculate Probability
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-7">
+            <div id="resultsPlaceholder" class="empty-state">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <h4>No Results Yet</h4>
+                <p class="text-muted">Enter your data in the left panel and click Compute to see results here.</p>
+            </div>
+
+            <div id="resultsContent" style="display:none;">
+                <!-- Descriptive stats results -->
+                <div id="descResults" class="card p-4 mb-4" style="display:none;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-list-ul me-2" style="color: var(--primary);"></i>Descriptive Statistics</h5>
+                    <div class="row g-2" id="descStatsGrid"></div>
+                    <div id="descDataPreview" class="mt-3 small text-muted"></div>
+                </div>
+
+                <!-- Correlation results -->
+                <div id="corrResults" class="card p-4 mb-4" style="display:none;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2" style="color: var(--primary);"></i>Correlation Results</h5>
+                    <div id="corrStatsGrid" class="row g-2"></div>
+                </div>
+
+                <!-- Probability results -->
+                <div id="probResults" class="card p-4 mb-4" style="display:none;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-graph-up me-2" style="color: var(--primary);"></i>Probability Result</h5>
+                    <div id="probResultContent"></div>
+                    <div id="probQuantiles" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Same param registry as plotting page
+const PROB_PARAM_REGISTRY = {};
+
+function initProbRegistry() {
+    var defaults = {
+        'normal': [{'name':'mu','label':'Mean (μ)','default':0},{'name':'sigma','label':'Std Dev (σ)','default':1}],
+        'uniform': [{'name':'a','label':'Lower (a)','default':0},{'name':'b','label':'Upper (b)','default':1}],
+        'exponential': [{'name':'rate','label':'Rate (λ)','default':1}],
+        'poisson': [{'name':'lam','label':'Rate (λ)','default':3}],
+        'binomial': [{'name':'n','label':'Trials (n)','default':10},{'name':'p','label':'Prob (p)','default':0.5}],
+        'bernoulli': [{'name':'p','label':'Prob (p)','default':0.5}],
+        'geometric': [{'name':'p','label':'Prob (p)','default':0.3}],
+        'gamma': [{'name':'alpha','label':'Shape (α)','default':2},{'name':'beta','label':'Rate (β)','default':1}],
+        'beta': [{'name':'a','label':'Alpha (α)','default':2},{'name':'b','label':'Beta (β)','default':2}],
+        'chi2': [{'name':'df','label':'Degrees of Freedom','default':3}],
+        'lognormal': [{'name':'mu','label':'Log-μ','default':0},{'name':'sigma','label':'Log-σ','default':0.5}],
+        'weibull': [{'name':'shape','label':'Shape (k)','default':1.5},{'name':'scale','label':'Scale (λ)','default':1}],
+        'student_t': [{'name':'df','label':'Degrees of Freedom','default':5}],
+        'f_dist': [{'name':'d1','label':'DF numerator','default':5},{'name':'d2','label':'DF denominator','default':20}],
+        'negative_binomial': [{'name':'r','label':'Successes (r)','default':5},{'name':'p','label':'Prob (p)','default':0.5}],
+        'rayleigh': [{'name':'scale','label':'Scale (σ)','default':1}],
+        'laplace': [{'name':'mu','label':'Location (μ)','default':0},{'name':'b','label':'Scale (b)','default':1}],
+        'cauchy': [{'name':'x0','label':'Location (x₀)','default':0},{'name':'gamma','label':'Scale (γ)','default':1}],
+    };
+    for (var k in defaults) PROB_PARAM_REGISTRY[k] = defaults[k];
+}
+initProbRegistry();
+
+// Probability tab - distribution select
+document.addEventListener('DOMContentLoaded', function () {
+    const probDistSelect = document.getElementById('probDistSelect');
+    const probParamsContainer = document.getElementById('probParamsContainer');
+
+    probDistSelect.addEventListener('change', function () {
+        const slug = this.value;
+        if (slug && PROB_PARAM_REGISTRY[slug]) {
+            let html = '';
+            PROB_PARAM_REGISTRY[slug].forEach(function (p) {
+                html += '<div class="mb-2">';
+                html += '<label class="form-label small fw-semibold">' + p.label + '</label>';
+                html += '<input type="number" class="form-control form-control-sm prob-param" data-name="' + p.name + '" value="' + p.default + '" step="0.1">';
+                html += '</div>';
+            });
+            probParamsContainer.innerHTML = html;
+        } else {
+            probParamsContainer.innerHTML = '<div class="text-muted small">Select a distribution to see parameters.</div>';
+        }
+    });
+
+    // Descriptive stats
+    document.getElementById('calcDescBtn').addEventListener('click', function () {
+        const values = document.getElementById('descValues').value.trim();
+        if (!values) { alert('Please enter some values.'); return; }
+        computeStats({values: values});
+    });
+
+    // Correlation
+    document.getElementById('calcCorrBtn').addEventListener('click', function () {
+        const x = document.getElementById('corrX').value.trim();
+        const y = document.getElementById('corrY').value.trim();
+        if (!x || !y) { alert('Please enter both X and Y values.'); return; }
+        computeStats({x_values: x, y_values: y, corr_method: document.getElementById('corrMethod').value});
+    });
+
+    // Probability
+    document.getElementById('calcProbBtn').addEventListener('click', function () {
+        const slug = probDistSelect.value;
+        if (!slug) { alert('Please select a distribution.'); return; }
+
+        const params = {};
+        document.querySelectorAll('.prob-param').forEach(function (inp) {
+            params[inp.dataset.name] = inp.value;
+        });
+
+        const xValue = document.getElementById('probXValue').value.trim();
+        const lower = document.getElementById('probLower').value.trim();
+        const upper = document.getElementById('probUpper').value.trim();
+
+        computeStats({
+            prob_slug: slug,
+            prob_params: params,
+            prob_x: xValue || null,
+            prob_lower: lower || null,
+            prob_upper: upper || null,
+        });
+    });
+
+    function computeStats(payload) {
+        document.getElementById('resultsPlaceholder').style.display = 'none';
+        document.getElementById('resultsContent').style.display = 'block';
+
+        fetch('/api/calculate-stats/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            // Hide all sections
+            document.getElementById('descResults').style.display = 'none';
+            document.getElementById('corrResults').style.display = 'none';
+            document.getElementById('probResults').style.display = 'none';
+
+            // Descriptive
+            if (data.descriptive) {
+                const d = data.descriptive;
+                const grid = document.getElementById('descStatsGrid');
+                let html = '';
+                var items = [
+                    ['Count', d.count], ['Mean', d.mean], ['Median', d.median],
+                    ['Variance', d.variance], ['Std Dev', d.std],
+                    ['Min', d.min], ['Max', d.max],
+                    ['Q1 (25%)', d.q25], ['Q3 (75%)', d.q75],
+                    ['Range', d.range], ['Skewness', d.skewness], ['Kurtosis', d.kurtosis],
+                ];
+                items.forEach(function (item) {
+                    var val = typeof item[1] === 'number' ? Number(item[1]).toFixed(4) : item[1];
+                    html += '<div class="col-6 col-md-4">';
+                    html += '<div class="card p-2 text-center h-100"><div class="stat-value" style="font-size:1.1rem;">' + val + '</div><div class="stat-label">' + item[0] + '</div></div>';
+                    html += '</div>';
+                });
+                grid.innerHTML = html;
+
+                if (data.data_preview) {
+                    document.getElementById('descDataPreview').innerHTML = 'Data preview: [' + data.data_preview.join(', ') + '] <span class="badge bg-light text-dark">' + data.data_count + ' values total</span>';
+                }
+
+                document.getElementById('descResults').style.display = 'block';
+            }
+
+            // Correlation
+            if (data.correlation) {
+                const c = data.correlation;
+                const grid = document.getElementById('corrStatsGrid');
+                let html = '';
+                if (c.covariance !== undefined) {
+                    html += '<div class="col-12 mb-2"><div class="card p-3"><div class="stat-value" style="font-size:1.3rem;">' + Number(c.covariance).toFixed(4) + '</div><div class="stat-label">Covariance</div></div></div>';
+                }
+                if (c.pearson) {
+                    html += '<div class="col-6"><div class="card p-3 text-center"><div class="stat-value" style="font-size:1.2rem;">' + Number(c.pearson.r).toFixed(4) + '</div><div class="stat-label">Pearson r' + (c.pearson.p_value !== undefined ? ' (p=' + Number(c.pearson.p_value).toFixed(6) + ')' : '') + '</div></div></div>';
+                }
+                if (c.spearman) {
+                    html += '<div class="col-6"><div class="card p-3 text-center"><div class="stat-value" style="font-size:1.2rem;">' + Number(c.spearman.r).toFixed(4) + '</div><div class="stat-label">Spearman ρ' + (c.spearman.p_value !== undefined ? ' (p=' + Number(c.spearman.p_value).toFixed(6) + ')' : '') + '</div></div></div>';
+                }
+                grid.innerHTML = html;
+                document.getElementById('corrResults').style.display = 'block';
+            }
+
+            // Probability
+            if (data.probability) {
+                const p = data.probability;
+                let html = '';
+                if (p.label) {
+                    html += '<div class="card p-4 text-center mb-3"><div class="stat-value" style="font-size:2rem;">' + Number(p.probability).toFixed(6) + '</div><div class="stat-label">' + p.label + '</div></div>';
+                }
+                if (p.survival !== undefined) {
+                    html += '<div class="card p-3 text-center"><div class="stat-value" style="font-size:1.3rem;">' + Number(p.survival).toFixed(6) + '</div><div class="stat-label">P(X > x)</div></div>';
+                }
+                document.getElementById('probResultContent').innerHTML = html;
+
+                if (p.quantiles) {
+                    let qHtml = '<h6 class="fw-semibold mb-2">Key Quantiles</h6><div class="d-flex flex-wrap gap-1">';
+                    var qLabels = {'q1':'1%','q2':'2.5%','q5':'5%','q25':'25%','q50':'Median','q75':'75%','q95':'95%','q97':'97.5%','q99':'99%'};
+                    for (var q in p.quantiles) {
+                        if (p.quantiles[q] !== null && qLabels[q]) {
+                            qHtml += '<span class="badge bg-light text-dark me-1 mb-1 px-3 py-2">' + qLabels[q] + ': ' + Number(p.quantiles[q]).toFixed(4) + '</span>';
+                        }
+                    }
+                    qHtml += '</div>';
+                    document.getElementById('probQuantiles').innerHTML = qHtml;
+                }
+
+                document.getElementById('probResults').style.display = 'block';
+            }
+        })
+        .catch(function (err) {
+            alert('Error: ' + err.message);
+        });
+    }
+});
+</script>
+{% endblock %}

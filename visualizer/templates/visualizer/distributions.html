@@ -1,0 +1,70 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4 align-items-end">
+        <div class="col-md-6">
+            <h1 class="fw-bold display-6"><i class="bi bi-grid-3x3-gap-fill me-2" style="color: var(--primary);"></i>Distributions</h1>
+            <p class="text-muted">Explore all supported probability distributions — formulas, parameters, and real-world applications.</p>
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <!-- Filter -->
+                <div class="btn-group" role="group">
+                    <a href="?type=all{% if search %}&search={{ search }}{% endif %}" class="btn btn-sm {% if current_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+                    <a href="?type=continuous{% if search %}&search={{ search }}{% endif %}" class="btn btn-sm {% if current_type == 'continuous' %}btn-primary{% else %}btn-outline-primary{% endif %}">Continuous</a>
+                    <a href="?type=discrete{% if search %}&search={{ search }}{% endif %}" class="btn btn-sm {% if current_type == 'discrete' %}btn-primary{% else %}btn-outline-primary{% endif %}">Discrete</a>
+                </div>
+                <!-- Search -->
+                <form class="d-inline-block" method="GET">
+                    {% if current_type and current_type != 'all' %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}" style="min-width:160px;">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if distributions %}
+    <div class="row g-4">
+        {% for dist in distributions %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card dist-card p-0" onclick="window.location.href='{% url 'visualizer:distribution_detail' dist.slug %}'">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-0">{{ dist.name }}</h5>
+                        <span class="badge rounded-pill {% if dist.type == 'continuous' %}dist-badge-continuous{% else %}dist-badge-discrete{% endif %}">
+                            {{ dist.type|capfirst }}
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-3">{{ dist.description|truncatechars:120 }}</p>
+                    <div class="formula-preview small mb-2">
+                        {{ dist.formula|safe }}
+                    </div>
+                    <div class="mt-auto">
+                        <span class="badge bg-light text-dark me-1">{{ dist.params|length }} param{% if dist.params|length != 1 %}s{% endif %}</span>
+                        <span class="small text-muted">{{ dist.applications|truncatechars:60 }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0 px-4 pb-3">
+                    <a href="{% url 'visualizer:distribution_detail' dist.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-eye me-1"></i>View Details & Plots
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h4>No Distributions Found</h4>
+        <p class="text-muted">Try a different filter or search term.</p>
+        <a href="{% url 'visualizer:distributions' %}" class="btn btn-primary"><i class="bi bi-arrow-left me-2"></i>Show All</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

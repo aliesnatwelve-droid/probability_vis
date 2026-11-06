@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Visualizer — {{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'visualizer/css/style.css' %}">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'visualizer:home' %}">
+                <i class="bi bi-graph-up-arrow me-2"></i>ProbViz
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'visualizer:home' %}"><i class="bi bi-house-fill me-1"></i>Home</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'plotting' %}active{% endif %}" href="{% url 'visualizer:plotting' %}"><i class="bi bi-bar-chart-fill me-1"></i>Plotting</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'plotting_3d' %}active{% endif %}" href="{% url 'visualizer:plotting_3d' %}"><i class="bi bi-boxes me-1"></i>3D Plot</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'distributions' %}active{% endif %}" href="{% url 'visualizer:distributions' %}"><i class="bi bi-grid-3x3-gap-fill me-1"></i>Distributions</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'calculations' %}active{% endif %}" href="{% url 'visualizer:calculations' %}"><i class="bi bi-calculator-fill me-1"></i>Calculations</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'visualizer:about' %}"><i class="bi bi-info-circle-fill me-1"></i>About</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="darkModeToggle" class="btn btn-outline-light btn-sm rounded-pill px-3" title="Toggle dark mode">
+                        <i class="bi bi-moon-fill" id="darkIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-shrink-0">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-4">
+        <div class="container">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-1 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i>ProbViz</h5>
+                    <p class="mb-0 small opacity-75">Visualize Probability Distributions & Statistical Insights</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-semibold">Quick Links</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="{% url 'visualizer:plotting' %}" class="text-decoration-none">Plotting</a></li>
+                        <li><a href="{% url 'visualizer:distributions' %}" class="text-decoration-none">Distributions</a></li>
+                        <li><a href="{% url 'visualizer:calculations' %}" class="text-decoration-none">Calculations</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-semibold">Resources</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="https://plotly.com/python/" target="_blank" class="text-decoration-none">Plotly Docs</a></li>
+                        <li><a href="https://docs.scipy.org/doc/scipy/" target="_blank" class="text-decoration-none">SciPy Stats</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-3 mb-2 opacity-25">
+            <div class="text-center small opacity-75">
+                &copy; {% now "Y" %} Probability Visualizer. Built with Django, Plotly &amp; SciPy.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="{% static 'visualizer/js/main.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

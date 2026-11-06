@@ -1,0 +1,518 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="fw-bold display-6"><i class="bi bi-bar-chart-fill me-2" style="color: var(--primary);"></i>Probability Plotting</h1>
+            <p class="text-muted">Select a distribution or plot your own custom math function.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Controls Panel -->
+        <div class="col-lg-4">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2"></i>Controls</h5>
+
+                <!-- Mode Switch -->
+                <div class="mb-3">
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="plotMode" id="modeDist" value="distribution" checked autocomplete="off">
+                        <label class="btn btn-outline-primary" for="modeDist">Distribution</label>
+                        <input type="radio" class="btn-check" name="plotMode" id="modeCustom" value="custom" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="modeCustom">Custom f(x)</label>
+                    </div>
+                </div>
+
+                <!-- DISTRIBUTION mode -->
+                <div id="distModePanel">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Distribution</label>
+                        <select id="distSelect" class="form-select">
+                            <option value="">— Choose a distribution —</option>
+                            {% for dist in distributions %}
+                            <option value="{{ dist.slug }}" data-type="{{ dist.type }}">{{ dist.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="paramContainer" class="mb-3"></div>
+                    <div id="comparisonSection" style="display:none;">
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Compare with</label>
+                            <select id="distSelect2" class="form-select">
+                                <option value="">— Select second distribution —</option>
+                                {% for dist in distributions %}
+                                <option value="{{ dist.slug }}">{{ dist.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="paramContainer2" class="mb-3"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Plot Type</label>
+                        <select id="plotTypeSelect" class="form-select">
+                            <option value="pdf_cdf">PDF + CDF</option>
+                            <option value="joint">Joint / Histogram</option>
+                            <option value="side_by_side">Side-by-Side Comparison</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="samplesContainer">
+                        <label class="form-label fw-semibold">Number of Samples</label>
+                        <input type="number" id="samplesInput" class="form-control" value="1000" min="100" max="10000" step="100">
+                    </div>
+                </div>
+
+                <!-- CUSTOM FUNCTION mode -->
+                <div id="customModePanel" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expression f(x) =</label>
+                        <textarea id="customExpr" class="form-control" rows="3" placeholder="e.g. sin(x) * exp(-x**2 / 10)" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;"></textarea>
+                        <div class="form-text small">Available: x, pi, e, sin, cos, tan, log, sqrt, abs, exp, sinh, cosh, tanh, arcsin, arccos, arctan, erf, erfc, floor, ceil, power, np.*</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Function Name</label>
+                        <input type="text" id="customFuncName" class="form-control" value="f(x)">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">x min</label>
+                            <input type="number" id="customXMin" class="form-control form-control-sm" value="-5" step="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">x max</label>
+                            <input type="number" id="customXMax" class="form-control form-control-sm" value="5" step="1">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">Fill from</label>
+                            <input type="number" id="customFillFrom" class="form-control form-control-sm" placeholder="(optional)">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Fill to</label>
+                            <input type="number" id="customFillTo" class="form-control form-control-sm" placeholder="(optional)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="d-grid gap-2">
+                    <button id="generateBtn" class="btn btn-primary btn-lg">
+                        <i class="bi bi-magic me-2"></i>Generate Plot
+                    </button>
+                    <div class="btn-group">
+                        <button id="exportPngBtn" class="btn btn-outline-primary btn-sm" disabled><i class="bi bi-download me-1"></i>PNG</button>
+                        <button id="exportCsvBtn" class="btn btn-outline-primary btn-sm" disabled><i class="bi bi-table me-1"></i>CSV</button>
+                        <button id="exportJsonBtn" class="btn btn-outline-primary btn-sm" disabled><i class="bi bi-filetype-json me-1"></i>JSON</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plot Display -->
+        <div class="col-lg-8">
+            <div id="plotLoading" class="empty-state" style="display:none;">
+                <div class="loading-spinner"></div>
+                <p class="text-muted mt-3">Generating plot...</p>
+            </div>
+
+            <div id="placeholderMessage" class="empty-state">
+                <i class="bi bi-graph-up"></i>
+                <h4>No Plot Yet</h4>
+                <p class="text-muted">Choose a distribution and click "Generate Plot" to see interactive charts here, or switch to "Custom f(x)" mode to plot your own function.</p>
+            </div>
+
+            <div id="plotResults" style="display:none;">
+                <div id="pdfPlot" class="plot-container mb-4"></div>
+                <div id="cdfPlot" class="plot-container mb-4" style="display:none;"></div>
+                <div id="jointPlot" class="plot-container mb-4" style="display:none;"></div>
+                <div id="comparisonPlot" class="plot-container mb-4" style="display:none;"></div>
+                <div id="probInfo" class="card p-3" style="display:none;">
+                    <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Distribution Info</h6>
+                    <div id="probInfoContent" class="small"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const DISTRIBUTIONS = {{ distributions_json|safe }};
+const PARAM_REGISTRY = {};
+
+function initParamRegistry() {
+    var defaults = {
+        'normal': [{'name':'mu','label':'Mean (μ)','default':0,'step':0.1,'min':-10,'max':10},
+                   {'name':'sigma','label':'Std Dev (σ)','default':1,'step':0.1,'min':0.1,'max':10}],
+        'uniform': [{'name':'a','label':'Lower (a)','default':0,'step':0.5,'min':-10,'max':10},
+                    {'name':'b','label':'Upper (b)','default':1,'step':0.5,'min':-10,'max':10}],
+        'exponential': [{'name':'rate','label':'Rate (λ)','default':1,'step':0.1,'min':0.1,'max':10}],
+        'poisson': [{'name':'lam','label':'Rate (λ)','default':3,'step':0.5,'min':0.1,'max':50}],
+        'binomial': [{'name':'n','label':'Trials (n)','default':10,'step':1,'min':1,'max':100,'integer':true},
+                     {'name':'p','label':'Prob (p)','default':0.5,'step':0.05,'min':0,'max':1}],
+        'bernoulli': [{'name':'p','label':'Prob (p)','default':0.5,'step':0.05,'min':0,'max':1}],
+        'geometric': [{'name':'p','label':'Prob (p)','default':0.3,'step':0.05,'min':0.01,'max':1}],
+        'gamma': [{'name':'alpha','label':'Shape (α)','default':2,'step':0.1,'min':0.1,'max':10},
+                  {'name':'beta','label':'Rate (β)','default':1,'step':0.1,'min':0.1,'max':10}],
+        'beta': [{'name':'a','label':'Alpha (α)','default':2,'step':0.1,'min':0.1,'max':10},
+                 {'name':'b','label':'Beta (β)','default':2,'step':0.1,'min':0.1,'max':10}],
+        'chi2': [{'name':'df','label':'Degrees of Freedom','default':3,'step':1,'min':1,'max':30,'integer':true}],
+        'lognormal': [{'name':'mu','label':'Log-μ','default':0,'step':0.1,'min':-3,'max':3},
+                      {'name':'sigma','label':'Log-σ','default':0.5,'step':0.1,'min':0.1,'max':3}],
+        'weibull': [{'name':'shape','label':'Shape (k)','default':1.5,'step':0.1,'min':0.1,'max':5},
+                    {'name':'scale','label':'Scale (λ)','default':1,'step':0.1,'min':0.1,'max':10}],
+        'student_t': [{'name':'df','label':'Degrees of Freedom','default':5,'step':1,'min':1,'max':30,'integer':true}],
+        'f_dist': [{'name':'d1','label':'DF numerator','default':5,'step':1,'min':1,'max':50,'integer':true},
+                   {'name':'d2','label':'DF denominator','default':20,'step':1,'min':1,'max':50,'integer':true}],
+        'negative_binomial': [{'name':'r','label':'Successes (r)','default':5,'step':1,'min':1,'max':30,'integer':true},
+                              {'name':'p','label':'Prob (p)','default':0.5,'step':0.05,'min':0.01,'max':1}],
+        'rayleigh': [{'name':'scale','label':'Scale (σ)','default':1,'step':0.1,'min':0.1,'max':10}],
+        'laplace': [{'name':'mu','label':'Location (μ)','default':0,'step':0.1,'min':-5,'max':5},
+                    {'name':'b','label':'Scale (b)','default':1,'step':0.1,'min':0.1,'max':5}],
+        'cauchy': [{'name':'x0','label':'Location (x₀)','default':0,'step':0.5,'min':-5,'max':5},
+                   {'name':'gamma','label':'Scale (γ)','default':1,'step':0.1,'min':0.1,'max':5}],
+    };
+    for (var k in defaults) PARAM_REGISTRY[k] = defaults[k];
+}
+initParamRegistry();
+
+document.addEventListener('DOMContentLoaded', function () {
+    const modeRadios = document.querySelectorAll('input[name="plotMode"]');
+    const distPanel = document.getElementById('distModePanel');
+    const customPanel = document.getElementById('customModePanel');
+    const distSelect = document.getElementById('distSelect');
+    const distSelect2 = document.getElementById('distSelect2');
+    const paramContainer = document.getElementById('paramContainer');
+    const paramContainer2 = document.getElementById('paramContainer2');
+    const comparisonSection = document.getElementById('comparisonSection');
+    const plotTypeSelect = document.getElementById('plotTypeSelect');
+    const samplesContainer = document.getElementById('samplesContainer');
+    const generateBtn = document.getElementById('generateBtn');
+    const exportPngBtn = document.getElementById('exportPngBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const placeholderMessage = document.getElementById('placeholderMessage');
+    const plotLoading = document.getElementById('plotLoading');
+    const plotResults = document.getElementById('plotResults');
+    const pdfPlot = document.getElementById('pdfPlot');
+    const cdfPlot = document.getElementById('cdfPlot');
+    const jointPlot = document.getElementById('jointPlot');
+    const comparisonPlot = document.getElementById('comparisonPlot');
+    const probInfo = document.getElementById('probInfo');
+    const probInfoContent = document.getElementById('probInfoContent');
+    const samplesInput = document.getElementById('samplesInput');
+    const customExpr = document.getElementById('customExpr');
+    const customFuncName = document.getElementById('customFuncName');
+    const customXMin = document.getElementById('customXMin');
+    const customXMax = document.getElementById('customXMax');
+    const customFillFrom = document.getElementById('customFillFrom');
+    const customFillTo = document.getElementById('customFillTo');
+
+    // Mode switch
+    modeRadios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (this.value === 'custom') {
+                distPanel.style.display = 'none';
+                customPanel.style.display = 'block';
+            } else {
+                distPanel.style.display = 'block';
+                customPanel.style.display = 'none';
+            }
+        });
+    });
+
+    function buildParamsHtml(slug) {
+        if (!slug || !PARAM_REGISTRY[slug]) {
+            return '<div class="text-muted small">Select a distribution to see parameters.</div>';
+        }
+        var params = PARAM_REGISTRY[slug];
+        var html = '';
+        params.forEach(function (p) {
+            var val = p.default !== undefined ? p.default : 0;
+            html += '<div class="mb-2">';
+            html += '<label class="form-label small fw-semibold mb-1">' + p.label + '</label>';
+            html += '<input type="number" class="form-control form-control-sm dist-param" ';
+            html += 'data-name="' + p.name + '" ';
+            html += 'value="' + val + '" ';
+            html += 'step="' + (p.step || 0.1) + '" ';
+            if (p.min !== undefined) html += 'min="' + p.min + '" ';
+            if (p.max !== undefined) html += 'max="' + p.max + '" ';
+            html += '>';
+            html += '</div>';
+        });
+        return html;
+    }
+
+    function getParamValues(container) {
+        var inputs = container.querySelectorAll('.dist-param');
+        var params = {};
+        inputs.forEach(function (inp) {
+            params[inp.dataset.name] = inp.value;
+        });
+        return params;
+    }
+
+    function renderParams(slug, container) {
+        if (!slug || !PARAM_REGISTRY[slug]) {
+            container.innerHTML = '<div class="text-muted small">Select a distribution to see parameters.</div>';
+            return;
+        }
+        container.innerHTML = buildParamsHtml(slug);
+    }
+
+    distSelect.addEventListener('change', function () {
+        var slug = this.value;
+        if (slug) {
+            renderParams(slug, paramContainer);
+            comparisonSection.style.display = 'block';
+            if (distSelect2.value) {
+                renderParams(distSelect2.value, paramContainer2);
+            }
+        } else {
+            paramContainer.innerHTML = '<div class="text-muted small">Select a distribution to see parameters.</div>';
+            comparisonSection.style.display = 'none';
+        }
+    });
+
+    distSelect2.addEventListener('change', function () {
+        var slug = this.value;
+        if (slug) {
+            renderParams(slug, paramContainer2);
+        } else {
+            paramContainer2.innerHTML = '<div class="text-muted small">Select a second distribution.</div>';
+        }
+    });
+
+    plotTypeSelect.addEventListener('change', function () {
+        var val = this.value;
+        if (val === 'side_by_side') {
+            comparisonSection.style.display = 'block';
+            samplesContainer.style.display = 'none';
+        } else if (val === 'joint') {
+            comparisonSection.style.display = 'none';
+            samplesContainer.style.display = 'block';
+        } else {
+            comparisonSection.style.display = 'none';
+            samplesContainer.style.display = 'block';
+        }
+    });
+
+    // Generate button
+    generateBtn.addEventListener('click', function () {
+        var mode = document.querySelector('input[name="plotMode"]:checked').value;
+
+        placeholderMessage.style.display = 'none';
+        plotLoading.style.display = 'block';
+        plotResults.style.display = 'none';
+
+        if (mode === 'custom') {
+            var expr = customExpr.value.trim();
+            if (!expr) {
+                alert('Please enter a function expression.');
+                plotLoading.style.display = 'none';
+                placeholderMessage.style.display = 'block';
+                return;
+            }
+
+            var payload = {
+                plot_type: 'custom_function',
+                expression: expr,
+                func_name: customFuncName.value || 'f(x)',
+                x_min: parseFloat(customXMin.value) || -5,
+                x_max: parseFloat(customXMax.value) || 5,
+            };
+            var fillFrom = customFillFrom.value.trim();
+            var fillTo = customFillTo.value.trim();
+            if (fillFrom && fillTo) {
+                payload.fill_from = fillFrom;
+                payload.fill_to = fillTo;
+            }
+
+            fetch('/api/generate-plot/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                plotLoading.style.display = 'none';
+                if (!data.success) {
+                    alert('Error: ' + data.error);
+                    placeholderMessage.style.display = 'block';
+                    return;
+                }
+                plotResults.style.display = 'block';
+                pdfPlot.style.display = 'block';
+                cdfPlot.style.display = 'none';
+                jointPlot.style.display = 'none';
+                comparisonPlot.style.display = 'none';
+                probInfo.style.display = 'none';
+                Plotly.react(pdfPlot, data.pdf);
+                exportPngBtn.disabled = false;
+                exportCsvBtn.disabled = true;
+                exportJsonBtn.disabled = true;
+            })
+            .catch(function (err) {
+                plotLoading.style.display = 'none';
+                placeholderMessage.style.display = 'block';
+                alert('Error: ' + err.message);
+            });
+            return;
+        }
+
+        // DISTRIBUTION mode
+        var slug = distSelect.value;
+        if (!slug) {
+            alert('Please select a distribution.');
+            plotLoading.style.display = 'none';
+            placeholderMessage.style.display = 'block';
+            return;
+        }
+
+        var params = getParamValues(paramContainer);
+        var pt = plotTypeSelect.value;
+        var samps = samplesInput.value || 1000;
+
+        var payload = {
+            distribution: slug,
+            params: params,
+            plot_type: pt,
+            samples: parseInt(samps),
+        };
+
+        if (pt === 'side_by_side') {
+            var slug2 = distSelect2.value;
+            if (!slug2) {
+                alert('Please select a second distribution for comparison.');
+                plotLoading.style.display = 'none';
+                placeholderMessage.style.display = 'block';
+                return;
+            }
+            payload.distribution2 = slug2;
+            payload.params2 = getParamValues(paramContainer2);
+        }
+
+        fetch('/api/generate-plot/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            plotLoading.style.display = 'none';
+            if (!data.success) {
+                alert('Error: ' + data.error);
+                placeholderMessage.style.display = 'block';
+                return;
+            }
+
+            plotResults.style.display = 'block';
+            pdfPlot.style.display = 'none';
+            cdfPlot.style.display = 'none';
+            jointPlot.style.display = 'none';
+            comparisonPlot.style.display = 'none';
+
+            if (pt === 'joint' && data.joint) {
+                jointPlot.style.display = 'block';
+                Plotly.react(jointPlot, data.joint);
+            } else if (pt === 'side_by_side' && data.comparison) {
+                comparisonPlot.style.display = 'block';
+                Plotly.react(comparisonPlot, data.comparison);
+            } else {
+                pdfPlot.style.display = 'block';
+                cdfPlot.style.display = 'block';
+                Plotly.react(pdfPlot, data.pdf);
+                Plotly.react(cdfPlot, data.cdf);
+            }
+
+            if (data.prob_info) {
+                probInfo.style.display = 'block';
+                var pi = data.prob_info;
+                var html = '';
+                if (pi.label) {
+                    html += '<div class="mb-1"><span class="fw-semibold">' + pi.label + ':</span> ' + pi.probability.toFixed(6) + '</div>';
+                }
+                if (pi.survival !== undefined) {
+                    html += '<div class="mb-1"><span class="fw-semibold">P(X > x):</span> ' + pi.survival.toFixed(6) + '</div>';
+                }
+                if (pi.quantiles) {
+                    html += '<div class="mt-2"><span class="fw-semibold">Key Quantiles:</span><br>';
+                    var qLabels = {'q1':'1%','q2':'2.5%','q5':'5%','q25':'25%','q50':'Median','q75':'75%','q95':'95%','q97':'97.5%','q99':'99%'};
+                    for (var q in pi.quantiles) {
+                        if (pi.quantiles[q] !== null && qLabels[q]) {
+                            html += '<span class="badge bg-light text-dark me-1 mb-1">' + qLabels[q] + ': ' + Number(pi.quantiles[q]).toFixed(3) + '</span>';
+                        }
+                    }
+                    html += '</div>';
+                }
+                probInfoContent.innerHTML = html;
+            }
+
+            exportPngBtn.disabled = false;
+            exportCsvBtn.disabled = false;
+            exportJsonBtn.disabled = false;
+        })
+        .catch(function (err) {
+            plotLoading.style.display = 'none';
+            placeholderMessage.style.display = 'block';
+            alert('Error: ' + err.message);
+        });
+    });
+
+    // Export buttons
+    exportPngBtn.addEventListener('click', function () {
+        var plots = document.querySelectorAll('.js-plotly-plot');
+        if (plots.length) {
+            Plotly.downloadImage(plots[0], {format: 'png', width: 1200, height: 600, filename: 'probability_plot'});
+        }
+    });
+
+    exportCsvBtn.addEventListener('click', function () {
+        var slug = distSelect.value;
+        if (!slug) return;
+        var params = getParamValues(paramContainer);
+        fetch('/api/export-data/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({distribution: slug, params: params, samples: samplesInput.value || 100, format: 'csv'}),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var a = document.createElement('a');
+                a.href = 'data:' + data.mime + ';base64,' + data.data;
+                a.download = data.filename;
+                a.click();
+            }
+        });
+    });
+
+    exportJsonBtn.addEventListener('click', function () {
+        var slug = distSelect.value;
+        if (!slug) return;
+        var params = getParamValues(paramContainer);
+        fetch('/api/export-data/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({distribution: slug, params: params, samples: samplesInput.value || 100, format: 'json'}),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var a = document.createElement('a');
+                a.href = 'data:' + data.mime + ';base64,' + data.data;
+                a.download = data.filename;
+                a.click();
+            }
+        });
+    });
+
+    distSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

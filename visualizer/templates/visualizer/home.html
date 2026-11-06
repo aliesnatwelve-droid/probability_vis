@@ -1,0 +1,180 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 hero-cta">
+                <h1 class="mb-3 animate-fade-in">Visualize Probability Distributions<br><span style="color: #40E0D0;">& Statistical Insights</span></h1>
+                <p class="lead mb-4 animate-fade-in delay-1">
+                    Explore interactive plots, learn about continuous and discrete distributions,
+                    and compute key statistical measures — all in one beautiful, educational platform.
+                </p>
+                <div class="d-flex flex-wrap gap-3 animate-fade-in delay-2">
+                    <a href="{% url 'visualizer:plotting' %}" class="btn btn-primary btn-lg px-4 py-3">
+                        <i class="bi bi-bar-chart-steps me-2"></i>Start Plotting
+                    </a>
+                    <a href="{% url 'visualizer:distributions' %}" class="btn btn-outline-light btn-lg px-4 py-3">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>Explore Distributions
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 hero-chart-wrapper animate-fade-in delay-3">
+                <div class="bg-white bg-opacity-10 rounded-4 p-3 backdrop-blur">
+                    <div id="heroChart" style="height: 320px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title fs-1">Everything You Need</h2>
+            <p class="text-muted mt-3 mb-0">A complete toolkit for probability and statistics</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card p-4 h-100 text-center animate-slide-up delay-1">
+                    <div class="card-icon mx-auto mb-3">
+                        <i class="bi bi-bar-chart-fill"></i>
+                    </div>
+                    <h5 class="fw-bold">Interactive Plotting</h5>
+                    <p class="text-muted small mb-0">PDF, CDF, joint distributions, and side-by-side comparisons with Plotly interactivity.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card p-4 h-100 text-center animate-slide-up delay-2">
+                    <div class="card-icon accent mx-auto mb-3">
+                        <i class="bi bi-book-fill"></i>
+                    </div>
+                    <h5 class="fw-bold">{{ dist_count }} Distributions</h5>
+                    <p class="text-muted small mb-0">Normal, Poisson, Binomial, Exponential, Beta, Gamma, Chi² and many more.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card p-4 h-100 text-center animate-slide-up delay-3">
+                    <div class="card-icon purple mx-auto mb-3">
+                        <i class="bi bi-calculator-fill"></i>
+                    </div>
+                    <h5 class="fw-bold">Statistical Calculations</h5>
+                    <p class="text-muted small mb-0">Descriptive stats, correlation analysis, probability calculators — CSV upload supported.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card p-4 h-100 text-center animate-slide-up delay-4">
+                    <div class="card-icon green mx-auto mb-3">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <h5 class="fw-bold">Educational</h5>
+                    <p class="text-muted small mb-0">Formulas in LaTeX, real-world applications, interactive exploration for deeper learning.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Stats Preview -->
+<section class="py-5" style="background: var(--bg-white);">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <h2 class="section-title fs-1">Powered by<br>Proven Technology</h2>
+                <p class="mt-3 text-muted">
+                    Built on Django 5, driven by SciPy &amp; NumPy, and visualized with Plotly.
+                    Every computation uses battle-tested numerical libraries.
+                </p>
+                <ul class="list-unstyled mt-3">
+                    <li class="mb-2"><i class="bi bi-check-circle-fill" style="color: var(--primary);"></i> <strong>{{ dist_count }}+</strong> probability distributions</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill" style="color: var(--primary);"></i> <strong>Full-screen</strong> interactive Plotly charts</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill" style="color: var(--primary);"></i> <strong>Export</strong> to PNG, SVG, CSV, JSON</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill" style="color: var(--primary);"></i> <strong>Dark/Light</strong> theme toggle</li>
+                </ul>
+                <a href="{% url 'visualizer:plotting' %}" class="btn btn-primary btn-lg mt-2 px-5">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Get Started
+                </a>
+            </div>
+            <div class="col-lg-6">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="card p-4 text-center">
+                            <div class="stat-value">Continuous</div>
+                            <div class="stat-label">Distributions</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card p-4 text-center">
+                            <div class="stat-value">Discrete</div>
+                            <div class="stat-label">Distributions</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card p-4 text-center">
+                            <div class="stat-value">PDF / CDF</div>
+                            <div class="stat-label">Plot Types</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card p-4 text-center">
+                            <div class="stat-value">Free</div>
+                            <div class="stat-label">Open Source</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-5 text-center" style="background: var(--gradient-hero); color: #fff;">
+    <div class="container">
+        <h2 class="fw-bold mb-3">Ready to Explore Probability?</h2>
+        <p class="lead mb-4 opacity-75">Jump right in — no signup required.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'visualizer:plotting' %}" class="btn btn-primary btn-lg px-5 py-3">
+                <i class="bi bi-bar-chart-steps me-2"></i>Start Plotting
+            </a>
+            <a href="{% url 'visualizer:about' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                <i class="bi bi-info-circle me-2"></i>Learn More
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Hero chart — animated normal distribution
+document.addEventListener('DOMContentLoaded', function () {
+    const x = [];
+    for (let i = -4; i <= 4; i += 0.05) x.push(i);
+    const y = x.map(v => Math.exp(-0.5 * v * v) / Math.sqrt(2 * Math.PI));
+
+    const trace = {
+        x: x, y: y,
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'tozeroy',
+        line: { color: '#40E0D0', width: 3 },
+        hovertemplate: 'x=%{x:.2f}<br>f(x)=%{y:.3f}<extra></extra>',
+    };
+
+    const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        margin: { l: 0, r: 0, t: 0, b: 0 },
+        xaxis: { visible: false, showgrid: false },
+        yaxis: { visible: false, showgrid: false },
+        hovermode: 'x',
+        font: { color: '#fff' },
+    };
+
+    Plotly.newPlot('heroChart', [trace], layout, { responsive: true, displayModeBar: false });
+});
+</script>
+{% endblock %}

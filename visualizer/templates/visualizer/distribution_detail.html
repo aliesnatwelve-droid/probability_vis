@@ -1,0 +1,122 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'visualizer:distributions' %}"><i class="bi bi-grid-3x3-gap me-1"></i>Distributions</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ dist.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <h1 class="fw-bold display-6">{{ dist.name }}</h1>
+            <span class="badge rounded-pill fs-6 {% if dist.type == 'continuous' %}dist-badge-continuous{% else %}dist-badge-discrete{% endif %} mb-3">
+                {{ dist.type|capfirst }}
+            </span>
+            <p class="lead">{{ dist.description }}</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Details</h5>
+                <h6>Parameters</h6>
+                <div class="mb-3">
+                    {% for p in dist.params %}
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span class="fw-semibold">{{ p.label }}:</span>
+                        <span class="font-monospace">Default = {{ p.default }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <h6>Formula</h6>
+                <div class="p-3 rounded" style="background: var(--bg-light); overflow-x: auto; font-size: 0.95rem;">
+                    {{ dist.formula|safe }}
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-briefcase me-2"></i>Real-World Applications</h5>
+                <p class="small mb-0">{{ dist.applications }}</p>
+            </div>
+        </div>
+
+        <!-- Plots -->
+        <div class="col-lg-8">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-1"><i class="bi bi-bar-chart me-2"></i>Interactive Plots</h5>
+                <p class="text-muted small mb-3">Adjust parameters and see the distribution change in real-time.</p>
+
+                <div class="row g-2 mb-4">
+                    {% for p in dist.params %}
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">{{ p.label }}</label>
+                        <input type="number" class="form-control form-control-sm param-slider" data-slug="{{ slug }}"
+                               data-name="{{ p.name }}" value="{{ p.default }}"
+                               step="{{ p.step|default:0.1 }}" min="{{ p.min|default:-10 }}" max="{{ p.max|default:10 }}">
+                    </div>
+                    {% endfor %}
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button id="updateDetailPlot" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-arrow-repeat me-1"></i>Update Plot
+                        </button>
+                    </div>
+                </div>
+
+                <div id="detailPdfPlot" class="plot-container mb-3"></div>
+                <div id="detailCdfPlot" class="plot-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const PDF_SPEC = {{ pdf_spec_json|safe }};
+const CDF_SPEC = {{ cdf_spec_json|safe }};
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Render initial plots from JSON specs
+    Plotly.react(document.getElementById('detailPdfPlot'), PDF_SPEC);
+    Plotly.react(document.getElementById('detailCdfPlot'), CDF_SPEC);
+
+    const updateBtn = document.getElementById('updateDetailPlot');
+    if (!updateBtn) return;
+
+    updateBtn.addEventListener('click', function () {
+        const slug = '{{ slug }}';
+        const inputs = document.querySelectorAll('.param-slider');
+        const params = {};
+
+        inputs.forEach(function (inp) {
+            params[inp.dataset.name] = inp.value;
+        });
+
+        fetch('/api/generate-plot/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({distribution: slug, params: params, plot_type: 'pdf_cdf'}),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                Plotly.react(document.getElementById('detailPdfPlot'), data.pdf);
+                Plotly.react(document.getElementById('detailCdfPlot'), data.cdf);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(function (err) {
+            alert('Error: ' + err.message);
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'visualizer/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="fw-bold display-6"><i class="bi bi-info-circle me-2" style="color: var(--primary);"></i>About ProbViz</h1>
+            <p class="lead text-muted">An interactive educational platform for probability and statistics.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="card p-4 h-100">
+                <h4 class="fw-bold"><i class="bi bi-lightbulb me-2" style="color: var(--primary);"></i>What is ProbViz?</h4>
+                <p class="text-muted">
+                    Probability Visualizer (ProbViz) is an interactive web application designed to help students,
+                    educators, data scientists, and anyone curious about probability explore statistical concepts
+                    through beautiful interactive visualization.
+                </p>
+                <p class="text-muted">
+                    With support for <strong>{{ dist_count }} different distributions</strong> — both continuous and discrete —
+                    you can plot PDFs, CDFs, histograms, compare distributions side-by-side, compute descriptive
+                    statistics, and calculate probabilities — all from your browser.
+                </p>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card p-4 h-100">
+                <h4 class="fw-bold"><i class="bi bi-stack me-2" style="color: var(--primary);"></i>Technology Stack</h4>
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-filetype-py me-2"></i>Django 5</span>
+                        <span class="badge bg-light text-dark">Backend</span>
+                    </li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-filetype-py me-2"></i>SciPy / NumPy / Pandas</span>
+                        <span class="badge bg-light text-dark">Statistics</span>
+                    </li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-bar-chart me-2"></i>Plotly</span>
+                        <span class="badge bg-light text-dark">Visualization</span>
+                    </li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-bootstrap me-2"></i>Bootstrap 5</span>
+                        <span class="badge bg-light text-dark">UI Framework</span>
+                    </li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-database me-2"></i>SQLite</span>
+                        <span class="badge bg-light text-dark">Database</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card p-4 text-center h-100">
+                <div class="display-3 mb-2" style="color: var(--primary);">{{ dist_count }}</div>
+                <h5 class="fw-bold">Distributions</h5>
+                <p class="text-muted small mb-0">Continuous and discrete, each with formulas, parameters, and real-world applications.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 text-center h-100">
+                <div class="display-3 mb-2" style="color: var(--primary);">Interactive</div>
+                <h5 class="fw-bold">Plotly Charts</h5>
+                <p class="text-muted small mb-0">Zoom, pan, hover for values, download as PNG — full interactivity built in.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 text-center h-100">
+                <div class="display-3 mb-2" style="color: var(--primary);">Free</div>
+                <h5 class="fw-bold"> &amp; Open Source</h5>
+                <p class="text-muted small mb-0">Built with open-source tools. No registration, no tracking, no ads.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-5 text-center">
+        <h4 class="fw-bold mb-3">Ready to Explore?</h4>
+        <p class="text-muted mb-4">Start visualizing probability distributions now.</p>
+        <div>
+            <a href="{% url 'visualizer:plotting' %}" class="btn btn-primary btn-lg px-5 me-2">
+                <i class="bi bi-bar-chart-steps me-2"></i>Start Plotting
+            </a>
+            <a href="{% url 'visualizer:distributions' %}" class="btn btn-outline-primary btn-lg px-5">
+                <i class="bi bi-grid-3x3-gap me-2"></i>Browse Distributions
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
